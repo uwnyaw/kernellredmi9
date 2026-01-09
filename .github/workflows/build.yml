@@ -1,4 +1,4 @@
-name: Build Redmi 9 NetHunter (Final Fix)
+name: Build Redmi 9 NetHunter (Correct Link)
 on:
   workflow_dispatch:
 
@@ -12,8 +12,8 @@ jobs:
       - name: Build Kernel
         uses: dabao1955/kernel_build_action@main
         with:
-          kernel-url: https://github.com/Neternels/android_kernel_xiaomi_mt6768
-          kernel-branch: eleven
+          kernel-url: https://github.com/Neternels/NetHunter-MT6768
+          kernel-branch: genom-release
           config: lancelot_defconfig
           arch: arm64
           
