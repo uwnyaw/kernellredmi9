@@ -1,4 +1,4 @@
-name: Build NetHunter Redmi 9 (Fixed Config)
+name: Build NetHunter Redmi 9 (Auto-Find Config)
 on:
   workflow_dispatch:
 
@@ -28,16 +28,23 @@ jobs:
           export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
           cd kernel
           
-          # Создаем папку для сборки
           mkdir -p out
           
-          # РЕШЕНИЕ: Вручную копируем найденный файл lancelot.config
-          cp arch/arm64/configs/lancelot.config out/.config
+          # ГЛАВНОЕ ИСПРАВЛЕНИЕ:
+          # Команда find сама ищет файл lancelot.config во всех папках и копирует его
+          echo "Ищем конфиг..."
+          find arch -name "lancelot.config" -exec cp {} out/.config \;
           
-          # Обновляем конфиг под систему
+          # Проверка, что файл скопировался
+          if [ ! -f out/.config ]; then
+            echo "ОШИБКА: Файл lancelot.config не найден!"
+            exit 1
+          fi
+          
+          # Применяем этот конфиг
           make O=out ARCH=arm64 olddefconfig
           
-          # Включаем функции NetHunter
+          # Включаем патчи
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
           scripts/config --file out/.config --enable CONFIG_CFG80211
@@ -56,5 +63,5 @@ jobs:
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
-          name: NetHunter-Kernel-Redmi9-Final
+          name: NetHunter-Kernel-Redmi9
           path: kernel/out/arch/arm64/boot/Image.gz-dtb
