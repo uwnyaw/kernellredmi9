@@ -1,4 +1,4 @@
-name: Build NetHunter Redmi 9 (Final Fix Quotes)
+name: Build NetHunter Redmi 9 (Scripts/Config Fix)
 on:
   workflow_dispatch:
 
@@ -27,35 +27,31 @@ jobs:
         run: |
           export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
           cd kernel
-          
           mkdir -p out
           
-          # 1. Находим конфиг
+          # 1. Находим и копируем "проблемный" конфиг
           find arch -name "lancelot.config" -exec cp {} out/.config \;
           
-          # 2. ЛЕЧЕНИЕ (Исправляем ошибку кавычек):
-          # Сначала удаляем старые строки, чтобы не дублировались
-          sed -i '/CONFIG_LITTLE_CPU_MASK/d' out/.config
-          sed -i '/CONFIG_BIG_CPU_MASK/d' out/.config
-          sed -i '/CONFIG_NR_CPUS/d' out/.config
+          # 2. ДЕЛАЕМ СКРИПТ ИСПОЛНЯЕМЫМ (важно!)
+          chmod +x scripts/config
           
-          # Вписываем значения БЕЗ КАВЫЧЕК (система ругалась именно на них)
-          echo "CONFIG_LITTLE_CPU_MASK=0xfc" >> out/.config
-          echo "CONFIG_BIG_CPU_MASK=0x03" >> out/.config
+          # 3. ЛЕЧЕНИЕ ЧЕРЕЗ ОФИЦИАЛЬНУЮ УТИЛИТУ:
+          # --set-str ставит кавычки, --set-val ставит числа.
+          # Пробуем установить их как строки (стандарт MediaTek)
+          ./scripts/config --file out/.config --set-str CONFIG_LITTLE_CPU_MASK "0xfc"
+          ./scripts/config --file out/.config --set-str CONFIG_BIG_CPU_MASK "0x03"
+          ./scripts/config --file out/.config --set-val CONFIG_NR_CPUS 8
           
-          # Указываем, что ядер всего 8 (Helio G80), чтобы не было вопроса "64 ядра?"
-          echo "CONFIG_NR_CPUS=8" >> out/.config
-          
-          # 3. Применяем исправления
+          # 4. Обновляем конфиг (теперь должно пройти без вопросов)
           make O=out ARCH=arm64 olddefconfig
           
-          # 4. Включаем NetHunter
-          scripts/config --file out/.config --enable CONFIG_USB_F_HID
-          scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
-          scripts/config --file out/.config --enable CONFIG_CFG80211
-          scripts/config --file out/.config --enable CONFIG_MAC80211
+          # 5. Включаем патчи NetHunter
+          ./scripts/config --file out/.config --enable CONFIG_USB_F_HID
+          ./scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
+          ./scripts/config --file out/.config --enable CONFIG_CFG80211
+          ./scripts/config --file out/.config --enable CONFIG_MAC80211
           
-          # 5. Запуск
+          # 6. Запуск сборки
           make -j$(nproc) O=out \
                           ARCH=arm64 \
                           CC=clang \
