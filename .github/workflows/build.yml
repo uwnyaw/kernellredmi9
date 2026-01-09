@@ -1,4 +1,4 @@
-name: Build NetHunter Redmi 9 (Fix CPU Mask)
+name: Build NetHunter Redmi 9 (Final Fix Quotes)
 on:
   workflow_dispatch:
 
@@ -30,19 +30,23 @@ jobs:
           
           mkdir -p out
           
-          # 1. Находим и копируем конфиг
+          # 1. Находим конфиг
           find arch -name "lancelot.config" -exec cp {} out/.config \;
           
-          # 2. ЛЕЧЕНИЕ ОШИБКИ: Вписываем данные процессора вручную
-          # Удаляем кривые строки из файла
+          # 2. ЛЕЧЕНИЕ (Исправляем ошибку кавычек):
+          # Сначала удаляем старые строки, чтобы не дублировались
           sed -i '/CONFIG_LITTLE_CPU_MASK/d' out/.config
           sed -i '/CONFIG_BIG_CPU_MASK/d' out/.config
+          sed -i '/CONFIG_NR_CPUS/d' out/.config
           
-          # Вставляем правильные значения для Redmi 9 (Helio G80)
-          echo 'CONFIG_LITTLE_CPU_MASK="0xfc"' >> out/.config
-          echo 'CONFIG_BIG_CPU_MASK="0x03"' >> out/.config
+          # Вписываем значения БЕЗ КАВЫЧЕК (система ругалась именно на них)
+          echo "CONFIG_LITTLE_CPU_MASK=0xfc" >> out/.config
+          echo "CONFIG_BIG_CPU_MASK=0x03" >> out/.config
           
-          # 3. Обновляем конфиг (теперь не должно падать)
+          # Указываем, что ядер всего 8 (Helio G80), чтобы не было вопроса "64 ядра?"
+          echo "CONFIG_NR_CPUS=8" >> out/.config
+          
+          # 3. Применяем исправления
           make O=out ARCH=arm64 olddefconfig
           
           # 4. Включаем NetHunter
@@ -51,7 +55,7 @@ jobs:
           scripts/config --file out/.config --enable CONFIG_CFG80211
           scripts/config --file out/.config --enable CONFIG_MAC80211
           
-          # 5. Запускаем сборку
+          # 5. Запуск
           make -j$(nproc) O=out \
                           ARCH=arm64 \
                           CC=clang \
