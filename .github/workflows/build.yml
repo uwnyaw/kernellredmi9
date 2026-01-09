@@ -1,32 +1,40 @@
-name: Build Redmi 9 NetHunter (Fast Queue Fix)
-on:
-  workflow_dispatch:
+name: Build Redmi 9 Manual
+on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git make bc bison flex build-essential libssl-dev libncurses5-dev gcc-aarch64-linux-gnu
+
+      - name: Get Clang
+        run: git clone --depth=1 -b master https://github.com/kdrag0n/proton-clang clang
+
+      - name: Get Kernel
+        run: git clone --depth=1 -b genom-release https://github.com/Neternels/NetHunter-MT6768 kernel
+
       - name: Build Kernel
-        uses: dabao1955/kernel_build_action@main
+        run: |
+          export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
+          cd kernel
+          make O=out ARCH=arm64 lancelot_defconfig
+          
+          scripts/config --file out/.config --enable CONFIG_USB_F_HID
+          scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
+          scripts/config --file out/.config --enable CONFIG_CFG80211
+          scripts/config --file out/.config --enable CONFIG_MAC80211
+          scripts/config --file out/.config --enable CONFIG_ATH9K_HTC
+          
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          kernel-url: https://github.com/Neternels/NetHunter-MT6768
-          kernel-branch: genom-release
-          config: lancelot_defconfig
-          arch: arm64
-          
-          android-version: 11
-          
-          aosp-clang: false
-          other-clang-url: https://github.com/kdrag0n/proton-clang
-          other-clang-branch: master
-          aosp-gcc: true
-          
-          nethunter: true
-          ksu: true
-     
-          extra-make-args: |
-            HOSTCC=gcc
-            HOSTCXX=g++
+          name: NetHunter-Kernel
+          path: kernel/out/arch/arm64/boot/Image.gz-dtb
