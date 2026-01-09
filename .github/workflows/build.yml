@@ -1,4 +1,4 @@
-name: Build NetHunter Redmi 9 (Input Pipe Fix)
+name: Build NetHunter Redmi 9 (Force Yes)
 on:
   workflow_dispatch:
 
@@ -32,29 +32,20 @@ jobs:
           # 1. Находим конфиг
           find arch -name "lancelot.config" -exec cp {} out/.config \;
           
-          # 2. ГОТОВИМ ФАЙЛ С ОТВЕТАМИ (ЧИТ-КОД)
-          # Порядок ответов на вопросы из твоего лога:
-          # 1 (4KB pages)
-          # 1 (39-bit VA)
-          # n (Big Endian - нет)
-          # n (Multi-core sched - нет)
-          # n (SMT sched - нет)
-          # 8 (Количество ядер)
-          # 0xfc (Маска маленьких ядер)
-          # 0x03 (Маска больших ядер)
-          printf "1\n1\nn\nn\nn\n8\n0xfc\n0x03\n" > answers.txt
+          # 2. МАГИЯ "YES":
+          # Мы создаем поток ответов:
+          # Сначала точные ответы на вопросы, где она вылетала (Ядра, Маски).
+          # А потом команда 'yes ""' бесконечно посылает "Enter" для всех остальных миллионов вопросов.
           
-          # 3. Запускаем настройку, скармливая ей ответы
-          # oldconfig спросит то, чего не хватает, и возьмет ответы из файла
-          make O=out ARCH=arm64 oldconfig < answers.txt
+          ( echo "1"; echo "1"; echo "n"; echo "n"; echo "n"; echo "8"; echo "0xfc"; echo "0x03"; yes "" ) | make O=out ARCH=arm64 oldconfig
           
-          # 4. Включаем NetHunter
+          # 3. Включаем NetHunter
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
           scripts/config --file out/.config --enable CONFIG_CFG80211
           scripts/config --file out/.config --enable CONFIG_MAC80211
           
-          # 5. Запуск сборки
+          # 4. Запуск сборки
           make -j$(nproc) O=out \
                           ARCH=arm64 \
                           CC=clang \
