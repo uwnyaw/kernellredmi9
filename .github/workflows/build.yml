@@ -16,10 +16,15 @@ jobs:
           kernel-branch: eleven
           config: lancelot_defconfig
           arch: arm64
-          aosp-clang: true
-          aosp-gcc: true # Добавили GCC, который требовала ошибка
+          
+          aosp-clang: false
+          
+          other-clang-url: https://github.com/kdrag0n/proton-clang
+          other-clang-branch: master
+          
+          aosp-gcc: true
+          
           ksu: true
-          # Используем правильный параметр для добавления настроек
           extra-make-args: |
             CONFIG_USB_F_HID=y
             CONFIG_USB_CONFIGFS_F_HID=y
