@@ -1,4 +1,4 @@
-name: Find Config Name
+name: Build NetHunter Redmi 9 (Fixed Config)
 on:
   workflow_dispatch:
 
@@ -28,17 +28,22 @@ jobs:
           export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
           cd kernel
           
-          echo " "
-          echo "=== СПИСОК ФАЙЛОВ В ПАПКЕ CONFIGS ==="
-          ls -R arch/arm64/configs
-          echo "====================================="
-          echo " "
+          # Создаем папку для сборки
+          mkdir -p out
           
-          make O=out ARCH=arm64 mt6768_defconfig
+          # РЕШЕНИЕ: Вручную копируем найденный файл lancelot.config
+          cp arch/arm64/configs/lancelot.config out/.config
           
+          # Обновляем конфиг под систему
+          make O=out ARCH=arm64 olddefconfig
+          
+          # Включаем функции NetHunter
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
+          scripts/config --file out/.config --enable CONFIG_CFG80211
+          scripts/config --file out/.config --enable CONFIG_MAC80211
           
+          # Запускаем сборку
           make -j$(nproc) O=out \
                           ARCH=arm64 \
                           CC=clang \
@@ -47,3 +52,9 @@ jobs:
                           CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
                           HOSTCC=gcc \
                           HOSTCXX=g++
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetHunter-Kernel-Redmi9-Final
+          path: kernel/out/arch/arm64/boot/Image.gz-dtb
