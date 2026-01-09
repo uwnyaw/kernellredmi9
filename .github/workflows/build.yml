@@ -1,4 +1,4 @@
-name: Build Redmi 9 NetHunter (A13)
+name: Build Redmi 9 NetHunter (Final Fix)
 on:
   workflow_dispatch:
 
@@ -16,7 +16,8 @@ jobs:
           kernel-branch: eleven
           config: lancelot_defconfig
           arch: arm64
-          android-version: 13
+          
+          android-version: 11
           
           aosp-clang: false
           other-clang-url: https://github.com/kdrag0n/proton-clang
