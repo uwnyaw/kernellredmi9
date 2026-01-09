@@ -1,27 +1,27 @@
-name: CI
-
+name: Build Redmi 9 NetHunter (A13)
 on:
   workflow_dispatch:
 
 jobs:
-  build-kernel:
-    name: Build Kernel
-    runs-on: ubuntu-22.04
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - name: Build
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Kernel
         uses: dabao1955/kernel_build_action@main
         with:
           kernel-url: https://github.com/Neternels/android_kernel_xiaomi_mt6768
           kernel-branch: eleven
           config: lancelot_defconfig
           arch: arm64
+          android-version: 13
+          
+          aosp-clang: false
+          other-clang-url: https://github.com/kdrag0n/proton-clang
+          other-clang-branch: master
           aosp-gcc: true
-          aosp-clang: true
-          android-version: 11
-          aosp-clang-version: r416183b
+          
           nethunter: true
-          extra-make-args: |
-            CONFIG_USB_F_HID=y
-            CONFIG_USB_CONFIGFS_F_HID=y
-            CONFIG_CFG80211=y
-            CONFIG_MAC80211=y
+          ksu: true
