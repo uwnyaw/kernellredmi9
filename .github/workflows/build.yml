@@ -1,4 +1,4 @@
-name: Build NetHunter Redmi 9 (Force Yes)
+name: Build NetHunter (Frankenstein Config)
 on:
   workflow_dispatch:
 
@@ -13,13 +13,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git make bc bison flex build-essential libssl-dev libncurses5-dev
-          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi wget
 
       - name: Download Clang (Proton)
         run: |
           git clone --depth=1 -b master https://github.com/kdrag0n/proton-clang clang
 
-      - name: Download Kernel
+      - name: Download Kernel Source (NetHunter)
         run: |
           git clone --depth=1 -b genom-release https://github.com/Neternels/NetHunter-MT6768 kernel
 
@@ -29,23 +29,21 @@ jobs:
           cd kernel
           mkdir -p out
           
-          # 1. Находим конфиг
-          find arch -name "lancelot.config" -exec cp {} out/.config \;
+          # РЕШЕНИЕ ПРОБЛЕМЫ:
+          # Скачиваем рабочий конфиг от Edhic1 (он идеально подходит для Redmi 9)
+          # вместо использования сломанного lancelot.config
+          wget https://raw.githubusercontent.com/Edhic1/kernel_KSu_Next_Lancelot/main/arch/arm64/configs/lancelot_defconfig -O out/.config
           
-          # 2. МАГИЯ "YES":
-          # Мы создаем поток ответов:
-          # Сначала точные ответы на вопросы, где она вылетала (Ядра, Маски).
-          # А потом команда 'yes ""' бесконечно посылает "Enter" для всех остальных миллионов вопросов.
+          # Обновляем конфиг под текущее ядро (без вопросов и зависаний)
+          make O=out ARCH=arm64 olddefconfig
           
-          ( echo "1"; echo "1"; echo "n"; echo "n"; echo "n"; echo "8"; echo "0xfc"; echo "0x03"; yes "" ) | make O=out ARCH=arm64 oldconfig
-          
-          # 3. Включаем NetHunter
+          # Включаем патчи NetHunter
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
           scripts/config --file out/.config --enable CONFIG_CFG80211
           scripts/config --file out/.config --enable CONFIG_MAC80211
           
-          # 4. Запуск сборки
+          # Запускаем сборку
           make -j$(nproc) O=out \
                           ARCH=arm64 \
                           CC=clang \
@@ -58,5 +56,5 @@ jobs:
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
-          name: NetHunter-Kernel-Redmi9
+          name: NetHunter-Kernel-Redmi9-Final
           path: kernel/out/arch/arm64/boot/Image.gz-dtb
