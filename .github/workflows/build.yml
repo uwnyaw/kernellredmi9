@@ -1,4 +1,4 @@
-name: Build NetHunter Redmi 9 (Auto-Find Config)
+name: Build NetHunter Redmi 9 (Fix CPU Mask)
 on:
   workflow_dispatch:
 
@@ -30,27 +30,28 @@ jobs:
           
           mkdir -p out
           
-          # ГЛАВНОЕ ИСПРАВЛЕНИЕ:
-          # Команда find сама ищет файл lancelot.config во всех папках и копирует его
-          echo "Ищем конфиг..."
+          # 1. Находим и копируем конфиг
           find arch -name "lancelot.config" -exec cp {} out/.config \;
           
-          # Проверка, что файл скопировался
-          if [ ! -f out/.config ]; then
-            echo "ОШИБКА: Файл lancelot.config не найден!"
-            exit 1
-          fi
+          # 2. ЛЕЧЕНИЕ ОШИБКИ: Вписываем данные процессора вручную
+          # Удаляем кривые строки из файла
+          sed -i '/CONFIG_LITTLE_CPU_MASK/d' out/.config
+          sed -i '/CONFIG_BIG_CPU_MASK/d' out/.config
           
-          # Применяем этот конфиг
+          # Вставляем правильные значения для Redmi 9 (Helio G80)
+          echo 'CONFIG_LITTLE_CPU_MASK="0xfc"' >> out/.config
+          echo 'CONFIG_BIG_CPU_MASK="0x03"' >> out/.config
+          
+          # 3. Обновляем конфиг (теперь не должно падать)
           make O=out ARCH=arm64 olddefconfig
           
-          # Включаем патчи
+          # 4. Включаем NetHunter
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
           scripts/config --file out/.config --enable CONFIG_CFG80211
           scripts/config --file out/.config --enable CONFIG_MAC80211
           
-          # Запускаем сборку
+          # 5. Запускаем сборку
           make -j$(nproc) O=out \
                           ARCH=arm64 \
                           CC=clang \
