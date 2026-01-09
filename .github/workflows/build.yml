@@ -1,0 +1,30 @@
+name: Build Redmi 9 NetHunter Kernel
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Kernel Build
+        uses: dabao1955/kernel_build_action@main
+        with:
+          kernel-url: https://github.com/Neternels/android_kernel_xiaomi_mt6768
+          kernel-branch: eleven
+          config: lancelot_defconfig
+          arch: arm64
+          aosp-clang: true
+          ksu: true
+          extra-cmd: |
+            scripts/config --enable CONFIG_USB_F_HID
+            scripts/config --enable CONFIG_USB_CONFIGFS_F_HID
+            scripts/config --enable CONFIG_CFG80211
+            scripts/config --enable CONFIG_MAC80211
+            scripts/config --enable CONFIG_WLAN_VENDOR_ATH
+            scripts/config --enable CONFIG_ATH9K_HTC
+            scripts/config --enable CONFIG_WLAN_VENDOR_REALTEK
+            scripts/config --enable CONFIG_RTL8187
+            scripts/config --enable CONFIG_RTL8188EU
