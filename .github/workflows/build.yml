@@ -1,4 +1,4 @@
-name: Build ViP3R NetHunter (Fix Config)
+name: Find Config Name
 on:
   workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
         run: |
           git clone --depth=1 -b master https://github.com/kdrag0n/proton-clang clang
 
-      - name: Download Kernel (ViP3R/NetErnels)
+      - name: Download Kernel
         run: |
           git clone --depth=1 -b genom-release https://github.com/Neternels/NetHunter-MT6768 kernel
 
@@ -28,13 +28,16 @@ jobs:
           export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
           cd kernel
           
-          make O=out ARCH=arm64 merlin_defconfig
+          echo " "
+          echo "=== СПИСОК ФАЙЛОВ В ПАПКЕ CONFIGS ==="
+          ls -R arch/arm64/configs
+          echo "====================================="
+          echo " "
+          
+          make O=out ARCH=arm64 mt6768_defconfig
           
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
-          scripts/config --file out/.config --enable CONFIG_CFG80211
-          scripts/config --file out/.config --enable CONFIG_MAC80211
-          scripts/config --file out/.config --enable CONFIG_ATH9K_HTC
           
           make -j$(nproc) O=out \
                           ARCH=arm64 \
@@ -44,9 +47,3 @@ jobs:
                           CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
                           HOSTCC=gcc \
                           HOSTCXX=g++
-
-      - name: Upload Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: NetHunter-Kernel-ViP3R
-          path: kernel/out/arch/arm64/boot/Image.gz-dtb
