@@ -1,10 +1,10 @@
-name: Build Redmi 9 NetHunter (Fix Ubuntu 20.04)
+name: Build Redmi 9 NetHunter (Fast Queue Fix)
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04 # ГЛАВНОЕ ИСПРАВЛЕНИЕ: Старая версия системы для совместимости
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,11 +18,15 @@ jobs:
           arch: arm64
           
           android-version: 11
+          
           aosp-clang: false
           other-clang-url: https://github.com/kdrag0n/proton-clang
           other-clang-branch: master
           aosp-gcc: true
           
-          # Функции
           nethunter: true
           ksu: true
+     
+          extra-make-args: |
+            HOSTCC=gcc
+            HOSTCXX=g++
