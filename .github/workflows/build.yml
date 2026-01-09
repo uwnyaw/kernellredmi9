@@ -1,10 +1,10 @@
-name: Build Redmi 9 NetHunter (Correct Link)
+name: Build Redmi 9 NetHunter (Fix Ubuntu 20.04)
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # ГЛАВНОЕ ИСПРАВЛЕНИЕ: Старая версия системы для совместимости
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,11 +18,11 @@ jobs:
           arch: arm64
           
           android-version: 11
-          
           aosp-clang: false
           other-clang-url: https://github.com/kdrag0n/proton-clang
           other-clang-branch: master
           aosp-gcc: true
           
+          # Функции
           nethunter: true
           ksu: true
