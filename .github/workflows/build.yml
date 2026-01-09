@@ -1,4 +1,4 @@
-name: Build NetHunter (Frankenstein Config)
+name: Build NetHunter (Shiva Config Strategy)
 on:
   workflow_dispatch:
 
@@ -13,13 +13,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git make bc bison flex build-essential libssl-dev libncurses5-dev
-          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi wget
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
 
       - name: Download Clang (Proton)
         run: |
           git clone --depth=1 -b master https://github.com/kdrag0n/proton-clang clang
 
-      - name: Download Kernel Source (NetHunter)
+      - name: Download Kernel
         run: |
           git clone --depth=1 -b genom-release https://github.com/Neternels/NetHunter-MT6768 kernel
 
@@ -29,15 +29,16 @@ jobs:
           cd kernel
           mkdir -p out
           
-          # РЕШЕНИЕ ПРОБЛЕМЫ:
-          # Скачиваем рабочий конфиг от Edhic1 (он идеально подходит для Redmi 9)
-          # вместо использования сломанного lancelot.config
-          wget https://raw.githubusercontent.com/Edhic1/kernel_KSu_Next_Lancelot/main/arch/arm64/configs/lancelot_defconfig -O out/.config
+          # ИЩЕМ SHIVA CONFIG (Это Redmi 9 G80, полный аналог)
+          find arch -name "shiva.config" -exec cp {} out/.config \;
           
-          # Обновляем конфиг под текущее ядро (без вопросов и зависаний)
+          # На всякий случай прописываем ядра, чтобы не зависло (G80 = 8 ядер)
+          scripts/config --file out/.config --set-val CONFIG_NR_CPUS 8
+          
+          # Обновляем конфиг
           make O=out ARCH=arm64 olddefconfig
           
-          # Включаем патчи NetHunter
+          # Включаем NetHunter
           scripts/config --file out/.config --enable CONFIG_USB_F_HID
           scripts/config --file out/.config --enable CONFIG_USB_CONFIGFS_F_HID
           scripts/config --file out/.config --enable CONFIG_CFG80211
@@ -56,5 +57,5 @@ jobs:
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
-          name: NetHunter-Kernel-Redmi9-Final
+          name: NetHunter-Kernel-Redmi9
           path: kernel/out/arch/arm64/boot/Image.gz-dtb
